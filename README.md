@@ -1,82 +1,74 @@
-# TaskMatrix – Advanced Project & Team Management System
+# TaskMatrix – Project & Team Management System
 
-## 1. Project Overview
+A full-stack Project and Team Management System built using the MERN stack (MongoDB, Express.js, React.js and Node.js). TaskMatrix helps teams manage projects, assign tasks, monitor progress, collaborate through comments, and receive real-time notifications.
 
-TaskMatrix is a MERN stack-based Project and Team Management System designed to help organizations manage projects, assign tasks, track progress, collaborate with team members, and monitor project activities through a centralized dashboard.
+## Key Features
 
-## 2. Technologies Used
-
-### Frontend
-- React.js
-- Vite
-- JavaScript
-- HTML5
-- CSS3
-- Axios
-- React Router
-- Lucide React
-
-### Backend
-- Node.js
-- Express.js
-- REST APIs
-- JWT Authentication
-- bcryptjs
-
-### Database
-- MongoDB
-- Mongoose
-
-### Development Tools
-- Visual Studio Code
-- Postman
-- Git and GitHub
-- MongoDB Atlas
-
-## 3. Main Features
-
-### Authentication
+### Authentication & Authorization
 - User registration and login.
 - JWT-based authentication.
 - Password hashing using bcrypt.
-- Protected API routes.
-- Role-based authorization.
-
-### User Management
-- View registered users.
-- Search users.
-- Filter users by role and status.
-- Update user information through authorized backend APIs.
-
-### Project Management
-- Create, view, update, and delete projects.
-- Assign and remove project members.
-- Manage project descriptions and dates.
-- Track project status.
-- Search and filter projects.
-
-### Task Management
-- Create, view, update, and delete tasks.
-- Assign tasks to team members.
-- Set task priorities.
-- Manage task deadlines.
-- Update task status.
-- Search and filter tasks.
-
-### Collaboration
-- Add comments to tasks.
-- View project activity logs.
+- Role-based access control.
+- Roles: Admin, Project Manager and Team Member.
 
 ### Dashboard
-- Total projects and tasks.
-- Completed, pending, and in-progress tasks.
-- Task completion percentage.
-- Overdue tasks.
-- Assigned tasks.
-- Project-wise progress.
-- Recent activities.
+- Project statistics.
+- Task statistics.
+- Task status overview.
+- Dashboard summary for users.
 
-## 4. Project Structure
+### Project Management
+- Create, view, update and delete projects.
+- Assign project managers.
+- Add team members to projects.
+- Track project status and dates.
+
+### Task Management
+- Create, view, update and delete tasks.
+- Assign tasks to team members.
+- Set task priorities and due dates.
+- Track task statuses.
+- Filter and search tasks.
+
+### Team Management
+- View team members.
+- Manage user information and roles.
+- Manage project team assignments.
+
+### Kanban Board
+- Visual task management.
+- Organize tasks by status.
+- Track task progress through workflow columns.
+
+### Notifications
+- Notification center.
+- Mark individual notifications as read.
+- Mark all notifications as read.
+- Delete notifications.
+- Real-time notifications using Socket.IO.
+
+### Additional Features
+- RESTful API architecture.
+- Pagination and sorting.
+- Search and filtering.
+- API documentation using Swagger.
+- Input validation and error handling.
+
+## Technology Stack
+
+| Category | Technologies |
+|---|---|
+| Frontend | React.js, Vite, JavaScript |
+| Styling | CSS, Bootstrap (if used in the current frontend) |
+| Backend | Node.js, Express.js |
+| Database | MongoDB, Mongoose |
+| Authentication | JWT, bcryptjs |
+| Real-time Communication | Socket.IO |
+| API Documentation | Swagger |
+| API Testing | Swagger UI, Postman |
+| Development Tools | VS Code, Git, GitHub |
+
+## Project Structure
 
 ```text
 TaskMatrix/
@@ -97,51 +89,56 @@ TaskMatrix/
 │   └── package.json
 │
 ├── frontend/
+│   ├── public/
 │   ├── src/
 │   │   ├── components/
+│   │   ├── context/
 │   │   ├── pages/
 │   │   ├── services/
 │   │   └── ...
-│   ├── public/
 │   └── package.json
 │
+├── .gitignore
 └── README.md
 ```
 
-## 5. Installation and Setup
+## Installation and Setup
 
 ### Prerequisites
+
+Install the following before running the project:
+
 - Node.js and npm
 - MongoDB Atlas account or local MongoDB
 - Git
+- Visual Studio Code
 
-### Step 1: Clone the Repository
+### 1. Clone the Repository
 
 ```bash
-git clone YOUR_GITHUB_REPOSITORY_URL
+git clone https://github.com/Kalpesh0451/TaskMatrix.git
 cd TaskMatrix
 ```
 
-### Step 2: Backend Setup
+### 2. Backend Setup
 
 ```bash
 cd backend
 npm install
 ```
 
-Create a `.env` file inside the backend folder using `.env.example` as a reference.
+Create a `.env` file inside the backend directory and configure the required environment variables.
 
-Configure the following environment variables:
+Example:
 
 ```env
 PORT=5001
 MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=your_secret_key
-NODE_ENV=development
-ADMIN_NAME=Administrator
-ADMIN_EMAIL=your_admin_email
-ADMIN_PASSWORD=your_admin_password
+CLIENT_URL=http://localhost:5173
 ```
+
+Use the exact variable names expected by your backend configuration.
 
 Start the backend:
 
@@ -149,13 +146,13 @@ Start the backend:
 npm run dev
 ```
 
-Backend URL:
+Backend API:
 
 ```text
 http://localhost:5001
 ```
 
-### Step 3: Frontend Setup
+### 3. Frontend Setup
 
 Open another terminal:
 
@@ -165,112 +162,70 @@ npm install
 npm run dev
 ```
 
-Open the local URL displayed by Vite in your browser.
+Frontend application:
 
-## 6. API Endpoints
+```text
+http://localhost:5173
+```
 
-### Authentication
+## API Documentation
 
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | /api/auth/register | Register user |
-| POST | /api/auth/login | Login user |
-| GET | /api/auth/me | Get current user |
+TaskMatrix provides API documentation through Swagger UI.
 
-### Users
+Once the backend is running, open:
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | /api/users | Get all users |
-| GET | /api/users/:id | Get user by ID |
-| PATCH | /api/users/profile | Update own profile |
-| PUT | /api/users/:id | Update user |
-| DELETE | /api/users/:id | Delete user |
+http://localhost:5001/api-docs
 
-### Projects
+The documentation includes API endpoints for:
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | /api/projects | Get all projects |
-| POST | /api/projects | Create project |
-| GET | /api/projects/:id | Get project details |
-| PUT | /api/projects/:id | Update project |
-| DELETE | /api/projects/:id | Delete project |
-| PUT | /api/projects/:id/members | Assign members |
-| DELETE | /api/projects/:id/members/:userId | Remove member |
-
-### Tasks
-
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | /api/tasks | Get tasks |
-| POST | /api/tasks | Create task |
-| GET | /api/tasks/my-tasks | Get assigned tasks |
-| GET | /api/tasks/:id | Get task details |
-| PUT | /api/tasks/:id | Update task |
-| DELETE | /api/tasks/:id | Delete task |
-
-### Comments and Activities
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | /api/tasks/:taskId/comments | Add comment |
-| GET | /api/tasks/:taskId/comments | Get task comments |
-| GET | /api/projects/:projectId/activities | Get project activities |
-
-### Dashboard
-
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | /api/dashboard | Get dashboard statistics |
-
-**Note:** Protected endpoints require a valid JWT Bearer Token.
-
-## 7. Database Collections
-
+- Health
+- Authentication
 - Users
 - Projects
 - Tasks
-- TaskComments
-- ActivityLogs
+- Dashboard
+- Notifications
 
-## 8. Testing
+For protected endpoints, authenticate using a valid JWT token through the Swagger Authorize option.
 
-API endpoints were organized and tested using Postman.
+## API Architecture
 
-The final API testing collection includes:
-- Project retrieval
-- Task retrieval
-- Dashboard statistics
-- User retrieval
-- Invalid project ID handling
-- Invalid task ID handling
-- Unauthorized request handling
-- Invalid route handling
+The backend follows a structured MVC-style architecture:
 
-## 9. Security
+- **Models:** MongoDB database schemas.
+- **Controllers:** Application business logic.
+- **Routes:** REST API endpoint definitions.
+- **Middleware:** Authentication, authorization and request handling.
+- **Services:** Reusable application services.
+- **Utils:** Helper functions and utilities.
 
-- Password hashing using bcrypt.
+## Security
+
 - JWT-based authentication.
-- Protected routes.
+- Password hashing.
 - Role-based authorization.
 - Environment variables for sensitive configuration.
-- Centralized error handling.
+- Request validation and centralized error handling.
 
-## 10. Future Enhancements
+## Future Enhancements
 
-- Real-time collaboration using Socket.IO.
+- Automated unit and integration testing.
 - Email notifications.
-- Kanban board.
 - File attachments.
-- Swagger API documentation.
-- Automated testing.
+- Advanced analytics and reporting.
 - Cloud deployment.
+- Docker-based deployment.
 
-## 11. Author
+## Author
 
-Developed as a MERN Stack training project at GetSphere Technologies.
+**Kalpesh Dipak Patil**
 
-**Project Name:** TaskMatrix  
-**Technology:** MERN Stack  
-**Category:** Project and Team Management System
+GitHub: https://github.com/Kalpesh0451
+
+## Repository
+
+https://github.com/Kalpesh0451/TaskMatrix
+
+---
+
+*TaskMatrix – Simplifying Project and Team Management.*
