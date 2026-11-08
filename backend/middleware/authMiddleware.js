@@ -39,6 +39,8 @@ exports.protect = async (req, res, next) => {
 
     next();
   } catch (error) {
+    console.error("JWT AUTH ERROR:", error.name, error.message);
+
     return res.status(401).json({
       success: false,
       message: "Invalid or expired token",

@@ -1,7 +1,7 @@
-
 const mongoose = require("mongoose");
 const Project = require("../models/Project");
 const User = require("../models/User");
+const { buildSort } = require("../utils/queryOptions");
 
 const canManageProject = (project, user) =>
   user.role === "admin" ||
@@ -80,14 +80,24 @@ exports.createProject = async (req, res) => {
       project: result,
     });
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
-// GET PROJECTS
+// GET PROJECTS WITH SEARCH, FILTER, PAGINATION AND SORTING
 exports.getProjects = async (req, res) => {
   try {
-    const { search = "", status, page = 1, limit = 10 } = req.query;
+    const {
+      search = "",
+      status,
+      page = 1,
+      limit = 10,
+      sortBy = "createdAt",
+      order = "desc",
+    } = req.query;
 
     const currentPage = Math.max(1, Number(page) || 1);
     const pageLimit = Math.min(100, Math.max(1, Number(limit) || 10));
@@ -100,14 +110,20 @@ exports.getProjects = async (req, res) => {
       filter.members = req.user.id;
     }
 
-    if (status) filter.status = status;
+    if (status) {
+      filter.status = status;
+    }
 
     if (search.trim()) {
       const escapedSearch = search.trim().replace(
         /[.*+?^${}()|[\]\\]/g,
         "\\$&"
       );
-      filter.name = { $regex: escapedSearch, $options: "i" };
+
+      filter.name = {
+        $regex: escapedSearch,
+        $options: "i",
+      };
     }
 
     const total = await Project.countDocuments(filter);
@@ -115,7 +131,14 @@ exports.getProjects = async (req, res) => {
     const projects = await Project.find(filter)
       .populate("manager", "name email")
       .populate("members", "name email")
-      .sort({ createdAt: -1 })
+      .sort(
+        buildSort(
+          sortBy,
+          order,
+          ["name", "startDate", "endDate", "status", "createdAt"],
+          "createdAt"
+        )
+      )
       .skip((currentPage - 1) * pageLimit)
       .limit(pageLimit);
 
@@ -123,11 +146,15 @@ exports.getProjects = async (req, res) => {
       success: true,
       total,
       page: currentPage,
+      limit: pageLimit,
       pages: Math.ceil(total / pageLimit),
       projects,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
@@ -164,9 +191,15 @@ exports.getProjectById = async (req, res) => {
       });
     }
 
-    res.status(200).json({ success: true, project });
+    res.status(200).json({
+      success: true,
+      project,
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
@@ -196,7 +229,13 @@ exports.updateProject = async (req, res) => {
       });
     }
 
-    const fields = ["name", "description", "startDate", "endDate", "status"];
+    const fields = [
+      "name",
+      "description",
+      "startDate",
+      "endDate",
+      "status",
+    ];
 
     fields.forEach((field) => {
       if (req.body[field] !== undefined) {
@@ -212,7 +251,10 @@ exports.updateProject = async (req, res) => {
       project,
     });
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
@@ -249,7 +291,10 @@ exports.deleteProject = async (req, res) => {
       message: "Project deleted successfully",
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
@@ -311,6 +356,7 @@ exports.assignMembers = async (req, res) => {
     }
 
     project.members = uniqueIds;
+
     await project.save();
     await project.populate("members", "name email");
 
@@ -320,7 +366,10 @@ exports.assignMembers = async (req, res) => {
       project,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
@@ -366,6 +415,9 @@ exports.removeMember = async (req, res) => {
       message: "Team member removed successfully",
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };

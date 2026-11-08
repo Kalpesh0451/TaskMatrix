@@ -1,9 +1,9 @@
-
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
+const { buildSort } = require("../utils/queryOptions");
 
-// GET ALL USERS
+// GET ALL USERS WITH SEARCH, FILTER, PAGINATION AND SORTING
 exports.getAllUsers = async (req, res) => {
   try {
     const {
@@ -12,6 +12,8 @@ exports.getAllUsers = async (req, res) => {
       status,
       page = 1,
       limit = 10,
+      sortBy = "createdAt",
+      order = "desc",
     } = req.query;
 
     const currentPage = Math.max(1, Number(page) || 1);
@@ -19,15 +21,22 @@ exports.getAllUsers = async (req, res) => {
 
     const filter = {};
 
-    if (role) filter.role = role;
+    if (role) {
+      filter.role = role;
+    }
 
     if (status === "active") filter.isActive = true;
     if (status === "inactive") filter.isActive = false;
 
     if (search.trim()) {
+      const escapedSearch = search.trim().replace(
+        /[.*+?^${}()|[\]\\]/g,
+        "\\$&"
+      );
+
       filter.$or = [
-        { name: { $regex: search.trim(), $options: "i" } },
-        { email: { $regex: search.trim(), $options: "i" } },
+        { name: { $regex: escapedSearch, $options: "i" } },
+        { email: { $regex: escapedSearch, $options: "i" } },
       ];
     }
 
@@ -35,7 +44,14 @@ exports.getAllUsers = async (req, res) => {
 
     const users = await User.find(filter)
       .select("-password")
-      .sort({ createdAt: -1 })
+      .sort(
+        buildSort(
+          sortBy,
+          order,
+          ["name", "email", "role", "createdAt"],
+          "createdAt"
+        )
+      )
       .skip((currentPage - 1) * pageLimit)
       .limit(pageLimit);
 
@@ -43,6 +59,7 @@ exports.getAllUsers = async (req, res) => {
       success: true,
       total,
       page: currentPage,
+      limit: pageLimit,
       pages: Math.ceil(total / pageLimit),
       users,
     });
@@ -73,7 +90,10 @@ exports.getUserById = async (req, res) => {
       });
     }
 
-    res.status(200).json({ success: true, user });
+    res.status(200).json({
+      success: true,
+      user,
+    });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -94,7 +114,10 @@ exports.getMyProfile = async (req, res) => {
       });
     }
 
-    res.status(200).json({ success: true, user });
+    res.status(200).json({
+      success: true,
+      user,
+    });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -122,7 +145,10 @@ exports.updateMyProfile = async (req, res) => {
       });
     }
 
-    if (password !== undefined && password.length < 6) {
+    if (
+      password !== undefined &&
+      (typeof password !== "string" || password.length < 6)
+    ) {
       return res.status(400).json({
         success: false,
         message: "Password must contain at least 6 characters",
@@ -138,7 +164,9 @@ exports.updateMyProfile = async (req, res) => {
       });
     }
 
-    if (name !== undefined) user.name = name.trim();
+    if (name !== undefined) {
+      user.name = name.trim();
+    }
 
     if (email !== undefined) {
       const normalizedEmail = email.trim().toLowerCase();
@@ -207,6 +235,7 @@ exports.updateUser = async (req, res) => {
           message: "Invalid name",
         });
       }
+
       user.name = name.trim();
     }
 
@@ -219,6 +248,7 @@ exports.updateUser = async (req, res) => {
       }
 
       const normalizedEmail = email.trim().toLowerCase();
+
       const existing = await User.findOne({
         email: normalizedEmail,
         _id: { $ne: user._id },
@@ -235,7 +265,11 @@ exports.updateUser = async (req, res) => {
     }
 
     if (role !== undefined) {
-      const allowedRoles = ["admin", "project-manager", "team-member"];
+      const allowedRoles = [
+        "admin",
+        "project-manager",
+        "team-member",
+      ];
 
       if (!allowedRoles.includes(role)) {
         return res.status(400).json({

@@ -1,9 +1,12 @@
-
 const mongoose = require("mongoose");
 const Task = require("../models/Task");
 const Project = require("../models/Project");
 const User = require("../models/User");
 const ActivityLog = require("../models/ActivityLog");
+const { buildSort } = require("../utils/queryOptions");
+const {
+  createAndSendNotification,
+} = require("../utils/notificationService");
 
 const isProjectManager = (project, user) =>
   user.role === "admin" ||
@@ -85,8 +88,6 @@ exports.createTask = async (req, res) => {
       });
     }
 
-    let assignee = null;
-
     if (assignedTo) {
       if (!mongoose.isValidObjectId(assignedTo)) {
         return res.status(400).json({
@@ -99,7 +100,7 @@ exports.createTask = async (req, res) => {
         (member) => member.toString() === assignedTo
       );
 
-      assignee = await User.findOne({
+      const assignee = await User.findOne({
         _id: assignedTo,
         isActive: true,
         role: "team-member",
@@ -134,6 +135,27 @@ exports.createTask = async (req, res) => {
 
     const result = await populateTask(Task.findById(task._id));
 
+    // SEND NOTIFICATION TO ASSIGNED TEAM MEMBER
+    if (task.assignedTo) {
+      try {
+        await createAndSendNotification({
+          io: req.app.get("io"),
+          recipient: task.assignedTo,
+          sender: req.user.id,
+          title: "New Task Assigned",
+          message: `You have been assigned the task "${task.title}".`,
+          type: "task-assigned",
+          relatedTask: task._id,
+          relatedProject: task.project,
+        });
+      } catch (notificationError) {
+        console.error(
+          "Task assignment notification failed:",
+          notificationError.message
+        );
+      }
+    }
+
     res.status(201).json({
       success: true,
       message: "Task created successfully",
@@ -147,7 +169,7 @@ exports.createTask = async (req, res) => {
   }
 };
 
-// GET ALL TASKS WITH FILTERS
+// GET ALL TASKS WITH FILTERS, PAGINATION AND SORTING
 exports.getTasks = async (req, res) => {
   try {
     const {
@@ -158,6 +180,8 @@ exports.getTasks = async (req, res) => {
       overdue,
       page = 1,
       limit = 10,
+      sortBy = "dueDate",
+      order = "asc",
     } = req.query;
 
     const currentPage = Math.max(1, Number(page) || 1);
@@ -166,7 +190,6 @@ exports.getTasks = async (req, res) => {
     const filter = {};
     let managerProjectIds = null;
 
-    // Role-based access restrictions
     if (req.user.role === "team-member") {
       filter.assignedTo = req.user.id;
     } else if (req.user.role === "project-manager") {
@@ -181,7 +204,6 @@ exports.getTasks = async (req, res) => {
       filter.project = { $in: managerProjectIds };
     }
 
-    // Validate requested project
     if (project) {
       if (!mongoose.isValidObjectId(project)) {
         return res.status(400).json({
@@ -234,7 +256,6 @@ exports.getTasks = async (req, res) => {
     if (status) filter.status = status;
     if (priority) filter.priority = priority;
 
-    // Escape special regex characters in search
     if (search.trim()) {
       const escapedSearch = search.trim().replace(
         /[.*+?^${}()|[\]\\]/g,
@@ -242,12 +263,21 @@ exports.getTasks = async (req, res) => {
       );
 
       filter.$or = [
-        { title: { $regex: escapedSearch, $options: "i" } },
-        { description: { $regex: escapedSearch, $options: "i" } },
+        {
+          title: {
+            $regex: escapedSearch,
+            $options: "i",
+          },
+        },
+        {
+          description: {
+            $regex: escapedSearch,
+            $options: "i",
+          },
+        },
       ];
     }
 
-    // Overdue filter
     if (overdue === "true") {
       filter.dueDate = { $lt: new Date() };
       filter.status = { $ne: "completed" };
@@ -257,7 +287,14 @@ exports.getTasks = async (req, res) => {
 
     const tasks = await populateTask(
       Task.find(filter)
-        .sort({ dueDate: 1, createdAt: -1 })
+        .sort(
+          buildSort(
+            sortBy,
+            order,
+            ["title", "dueDate", "priority", "status", "createdAt"],
+            "dueDate"
+          )
+        )
         .skip((currentPage - 1) * pageLimit)
         .limit(pageLimit)
     );
@@ -266,6 +303,7 @@ exports.getTasks = async (req, res) => {
       success: true,
       total,
       page: currentPage,
+      limit: pageLimit,
       pages: Math.ceil(total / pageLimit),
       tasks,
     });
@@ -344,7 +382,10 @@ exports.getTaskById = async (req, res) => {
       });
     }
 
-    res.status(200).json({ success: true, task });
+    res.status(200).json({
+      success: true,
+      task,
+    });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -353,7 +394,7 @@ exports.getTaskById = async (req, res) => {
   }
 };
 
-// UPDATE TASK
+// UPDATE TASK WITH REAL-TIME NOTIFICATIONS
 exports.updateTask = async (req, res) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
@@ -395,10 +436,21 @@ exports.updateTask = async (req, res) => {
     }
 
     const allowedFields = canManage
-      ? ["title", "description", "priority", "status", "dueDate", "assignedTo"]
+      ? [
+          "title",
+          "description",
+          "priority",
+          "status",
+          "dueDate",
+          "assignedTo",
+        ]
       : ["status"];
 
+    // SAVE OLD VALUES BEFORE UPDATING
     const oldStatus = task.status;
+    const oldAssignee = task.assignedTo
+      ? task.assignedTo.toString()
+      : null;
 
     for (const field of allowedFields) {
       if (req.body[field] !== undefined) {
@@ -406,9 +458,12 @@ exports.updateTask = async (req, res) => {
       }
     }
 
-    // Validate assignee
+    // VALIDATE ASSIGNEE
     if (req.body.assignedTo !== undefined && canManage) {
-      if (req.body.assignedTo === null || req.body.assignedTo === "") {
+      if (
+        req.body.assignedTo === null ||
+        req.body.assignedTo === ""
+      ) {
         task.assignedTo = null;
       } else {
         if (!mongoose.isValidObjectId(req.body.assignedTo)) {
@@ -419,7 +474,8 @@ exports.updateTask = async (req, res) => {
         }
 
         const isMember = projectData.members.some(
-          (member) => member.toString() === req.body.assignedTo
+          (member) =>
+            member.toString() === req.body.assignedTo.toString()
         );
 
         const user = await User.findOne({
@@ -441,7 +497,9 @@ exports.updateTask = async (req, res) => {
 
     if (
       req.body.priority &&
-      !["low", "medium", "high", "critical"].includes(req.body.priority)
+      !["low", "medium", "high", "critical"].includes(
+        req.body.priority
+      )
     ) {
       return res.status(400).json({
         success: false,
@@ -451,7 +509,9 @@ exports.updateTask = async (req, res) => {
 
     if (
       req.body.status &&
-      !["todo", "in-progress", "review", "completed"].includes(req.body.status)
+      !["todo", "in-progress", "review", "completed"].includes(
+        req.body.status
+      )
     ) {
       return res.status(400).json({
         success: false,
@@ -475,11 +535,59 @@ exports.updateTask = async (req, res) => {
       task.project,
       task._id,
       req.user,
-      oldStatus !== task.status ? "Task Status Updated" : "Task Updated",
+      oldStatus !== task.status
+        ? "Task Status Updated"
+        : "Task Updated",
       `Task "${task.title}" was updated`
     );
 
-    const result = await populateTask(Task.findById(task._id));
+    const result = await populateTask(
+      Task.findById(task._id)
+    );
+
+    const newAssignee = task.assignedTo
+      ? task.assignedTo.toString()
+      : null;
+
+    // SEND NOTIFICATIONS
+    try {
+      // Notify newly assigned team member
+      if (newAssignee && newAssignee !== oldAssignee) {
+        await createAndSendNotification({
+          io: req.app.get("io"),
+          recipient: newAssignee,
+          sender: req.user.id,
+          title: "New Task Assigned",
+          message: `You have been assigned the task "${task.title}".`,
+          type: "task-assigned",
+          relatedTask: task._id,
+          relatedProject: task.project,
+        });
+      }
+
+      // Notify assignee when task status changes
+      if (
+        oldStatus !== task.status &&
+        newAssignee &&
+        newAssignee !== req.user.id.toString()
+      ) {
+        await createAndSendNotification({
+          io: req.app.get("io"),
+          recipient: newAssignee,
+          sender: req.user.id,
+          title: "Task Status Updated",
+          message: `The status of "${task.title}" changed to ${task.status}.`,
+          type: "task-updated",
+          relatedTask: task._id,
+          relatedProject: task.project,
+        });
+      }
+    } catch (notificationError) {
+      console.error(
+        "Task update notification failed:",
+        notificationError.message
+      );
+    }
 
     res.status(200).json({
       success: true,
