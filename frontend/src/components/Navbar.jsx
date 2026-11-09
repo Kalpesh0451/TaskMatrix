@@ -8,6 +8,7 @@ import {
   Trash2,
   X,
   Circle,
+  CheckSquare,
 } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
@@ -24,7 +25,6 @@ const Navbar = ({ onMenuClick }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
 
-  // LOAD NOTIFICATIONS
   const loadNotifications = useCallback(async () => {
     try {
       setLoadingNotifications(true);
@@ -44,7 +44,6 @@ const Navbar = ({ onMenuClick }) => {
     }
   }, []);
 
-  // SOCKET.IO CONNECTION
   useEffect(() => {
     if (!user) return;
 
@@ -55,14 +54,10 @@ const Navbar = ({ onMenuClick }) => {
       return;
     }
 
-    // Load existing notifications
     loadNotifications();
 
-    // Establish authenticated socket connection
     const socket = io(SOCKET_URL, {
-      auth: {
-        token,
-      },
+      auth: { token },
       transports: ["websocket", "polling"],
       reconnection: true,
       reconnectionAttempts: 10,
@@ -70,29 +65,20 @@ const Navbar = ({ onMenuClick }) => {
     });
 
     socket.on("connect", () => {
-      console.log(
-        "TaskMatrix real-time notifications connected:",
-        socket.id
-      );
+      console.log("TaskMatrix real-time notifications connected:", socket.id);
     });
 
     socket.on("connect_error", (error) => {
-      console.error(
-        "Socket.IO connection error:",
-        error.message
-      );
+      console.error("Socket.IO connection error:", error.message);
     });
 
     socket.on("notification:new", (notification) => {
-      console.log("New real-time notification received:", notification);
-
       setNotifications((previous) => {
         const exists = previous.some(
           (item) => item._id === notification._id
         );
 
         if (exists) return previous;
-
         return [notification, ...previous];
       });
 
@@ -105,7 +91,6 @@ const Navbar = ({ onMenuClick }) => {
       console.log("Socket.IO disconnected:", reason);
     });
 
-    // Refresh notifications periodically as a fallback
     const interval = setInterval(loadNotifications, 30000);
 
     return () => {
@@ -114,7 +99,6 @@ const Navbar = ({ onMenuClick }) => {
     };
   }, [user, loadNotifications]);
 
-  // MARK SINGLE NOTIFICATION AS READ
   const markRead = async (id) => {
     try {
       await api.patch(`/notifications/${id}/read`);
@@ -124,7 +108,6 @@ const Navbar = ({ onMenuClick }) => {
     }
   };
 
-  // MARK ALL NOTIFICATIONS AS READ
   const markAllRead = async () => {
     try {
       await api.patch("/notifications/read-all");
@@ -134,7 +117,6 @@ const Navbar = ({ onMenuClick }) => {
     }
   };
 
-  // DELETE NOTIFICATION
   const deleteNotification = async (id) => {
     try {
       await api.delete(`/notifications/${id}`);
@@ -145,12 +127,25 @@ const Navbar = ({ onMenuClick }) => {
   };
 
   return (
-    <header className="top-navbar">
-      <button className="menu-button" onClick={onMenuClick}>
-        <Menu size={22} />
-      </button>
+    <header className="top-navbar tm-navbar">
+      <div className="tm-navbar-left">
+        <button
+          className="menu-button"
+          onClick={onMenuClick}
+          aria-label="Open menu"
+        >
+          <Menu size={22} />
+        </button>
 
-      <div className="navbar-search">
+        <div className="tm-navbar-brand">
+          <CheckSquare size={23} strokeWidth={2.8} />
+          <span>
+            Task<span>Matrix</span>
+          </span>
+        </div>
+      </div>
+
+      <div className="navbar-search tm-navbar-breadcrumb">
         <span>Workspace / Overview</span>
       </div>
 
@@ -165,7 +160,6 @@ const Navbar = ({ onMenuClick }) => {
             }}
           >
             <Bell size={20} />
-
             {unreadCount > 0 && (
               <span className="notification-count">
                 {unreadCount > 99 ? "99+" : unreadCount}
@@ -202,9 +196,7 @@ const Navbar = ({ onMenuClick }) => {
 
               <div className="notification-list">
                 {loadingNotifications ? (
-                  <p className="notification-empty">
-                    Loading...
-                  </p>
+                  <p className="notification-empty">Loading...</p>
                 ) : notifications.length === 0 ? (
                   <p className="notification-empty">
                     You're all caught up!
@@ -223,7 +215,6 @@ const Navbar = ({ onMenuClick }) => {
 
                       <div className="notification-item-content">
                         <strong>{notification.title}</strong>
-
                         <p>{notification.message}</p>
 
                         <small>
@@ -235,9 +226,7 @@ const Navbar = ({ onMenuClick }) => {
                         <div className="notification-item-actions">
                           {!notification.isRead && (
                             <button
-                              onClick={() =>
-                                markRead(notification._id)
-                              }
+                              onClick={() => markRead(notification._id)}
                             >
                               Mark as read
                             </button>
