@@ -1,72 +1,72 @@
 # TaskMatrix – Project & Team Management System
 
-A full-stack Project and Team Management System built using the MERN stack (MongoDB, Express.js, React.js and Node.js). TaskMatrix helps teams manage projects, assign tasks, monitor progress, collaborate through comments, and receive real-time notifications.
+A full-stack MERN application designed to simplify project management, task tracking, team collaboration, and real-time notifications.
 
-## Key Features
+## Project Overview
 
-### Authentication & Authorization
-- User registration and login.
-- JWT-based authentication.
-- Password hashing using bcrypt.
-- Role-based access control.
-- Roles: Admin, Project Manager and Team Member.
+TaskMatrix is a web-based project and team management platform that enables administrators, project managers, and team members to manage projects, assign tasks, monitor progress, and collaborate through a centralized workspace.
 
-### Dashboard
-- Project statistics.
-- Task statistics.
-- Task status overview.
-- Dashboard summary for users.
+## Features
 
-### Project Management
-- Create, view, update and delete projects.
-- Assign project managers.
-- Add team members to projects.
-- Track project status and dates.
+### 1. Authentication and Authorization
+- User registration and login
+- JWT-based authentication
+- Password hashing using bcrypt
+- Role-based access control
+- Admin, Project Manager, and Team Member roles
 
-### Task Management
-- Create, view, update and delete tasks.
-- Assign tasks to team members.
-- Set task priorities and due dates.
-- Track task statuses.
-- Filter and search tasks.
+### 2. Dashboard
+- Project statistics
+- Task overview
+- Progress monitoring
+- Centralized workspace
 
-### Team Management
-- View team members.
-- Manage user information and roles.
-- Manage project team assignments.
+### 3. Project Management
+- Create and manage projects
+- View project details
+- Search and filter projects
+- Track project progress
 
-### Kanban Board
-- Visual task management.
-- Organize tasks by status.
-- Track task progress through workflow columns.
+### 4. Task Management
+- Create and assign tasks
+- Update task details and status
+- Search and filter tasks
+- Track task progress and deadlines
 
-### Notifications
-- Notification center.
-- Mark individual notifications as read.
-- Mark all notifications as read.
-- Delete notifications.
-- Real-time notifications using Socket.IO.
+### 5. Kanban Board
+- Visual task management
+- Organize tasks by status
+- Track workflow progress
 
-### Additional Features
-- RESTful API architecture.
-- Pagination and sorting.
-- Search and filtering.
-- API documentation using Swagger.
-- Input validation and error handling.
+### 6. Team Management
+- View team members
+- Display member information and roles
+- Manage team collaboration
+
+### 7. Notifications
+- Notification center
+- Read and unread notifications
+- Mark all notifications as read
+- Delete notifications
+- Real-time notifications using Socket.IO
+
+### 8. Additional Features
+- Search, filtering, sorting, and pagination
+- Task comments
+- Activity logs
+- REST API documentation using Swagger UI
 
 ## Technology Stack
 
-| Category | Technologies |
+| Layer | Technologies |
 |---|---|
-| Frontend | React.js, Vite, JavaScript |
-| Styling | CSS, Bootstrap (if used in the current frontend) |
+| Frontend | React.js, Vite, JavaScript, CSS |
 | Backend | Node.js, Express.js |
 | Database | MongoDB, Mongoose |
-| Authentication | JWT, bcryptjs |
+| Authentication | JWT, bcrypt |
 | Real-time Communication | Socket.IO |
-| API Documentation | Swagger |
-| API Testing | Swagger UI, Postman |
-| Development Tools | VS Code, Git, GitHub |
+| API Documentation | Swagger UI |
+| Development Tools | VS Code, Git, GitHub, Postman |
 
 ## Project Structure
 
@@ -79,41 +79,40 @@ TaskMatrix/
 │   ├── middleware/
 │   ├── models/
 │   ├── routes/
-│   ├── scripts/
-│   ├── services/
-│   ├── utils/
-│   ├── validations/
-│   ├── .env.example
-│   ├── app.js
-│   ├── server.js
-│   └── package.json
+│   ├── package.json
+│   └── .env.example
 │
 ├── frontend/
 │   ├── public/
 │   ├── src/
-│   │   ├── components/
-│   │   ├── context/
-│   │   ├── pages/
-│   │   ├── services/
-│   │   └── ...
 │   └── package.json
 │
-├── .gitignore
-└── README.md
+├── Screenshots/
+│   ├── dashboard.png
+│   ├── notifications.png
+│   ├── projects.png
+│   ├── tasks.png
+│   └── team members.png
+│
+├── DATABASE_SCHEMA.md
+├── README.md
+└── .gitignore
 ```
+
+*Note: The folder structure above is an overview. Refer to the repository for the complete source structure.*
+
+## Prerequisites
+
+Install the following before running the application:
+
+- Node.js and npm
+- MongoDB or MongoDB Atlas
+- Git
+- VS Code (recommended)
 
 ## Installation and Setup
 
-### Prerequisites
-
-Install the following before running the project:
-
-- Node.js and npm
-- MongoDB Atlas account or local MongoDB
-- Git
-- Visual Studio Code
-
-### 1. Clone the Repository
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/Kalpesh0451/TaskMatrix.git
@@ -127,29 +126,14 @@ cd backend
 npm install
 ```
 
-Create a `.env` file inside the backend directory and configure the required environment variables.
+Create a `.env` file in the backend directory using `.env.example` as a reference.
 
-Example:
-
-```env
-PORT=5001
-MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_secret_key
-CLIENT_URL=http://localhost:5173
-```
-
-Use the exact variable names expected by your backend configuration.
+Configure your MongoDB connection string, JWT secret, server port, and frontend URL.
 
 Start the backend:
 
 ```bash
 npm run dev
-```
-
-Backend API:
-
-```text
-http://localhost:5001
 ```
 
 ### 3. Frontend Setup
@@ -162,21 +146,31 @@ npm install
 npm run dev
 ```
 
-Frontend application:
+Open the local URL displayed by Vite in your browser. The default Vite development URL is usually:
 
 ```text
 http://localhost:5173
 ```
 
+## Environment Variables
+
+The backend requires environment variables for its configuration.
+
+Refer to `backend/.env.example` for the exact variable names and descriptions.
+
+Never commit your actual `.env` file, database credentials, or JWT secrets to GitHub.
+
 ## API Documentation
 
-TaskMatrix provides API documentation through Swagger UI.
+TaskMatrix provides Swagger UI for exploring and testing backend REST API endpoints.
 
 Once the backend is running, open:
 
+```text
 http://localhost:5001/api-docs
+```
 
-The documentation includes API endpoints for:
+The documented API sections include:
 
 - Health
 - Authentication
@@ -186,46 +180,43 @@ The documentation includes API endpoints for:
 - Dashboard
 - Notifications
 
-For protected endpoints, authenticate using a valid JWT token through the Swagger Authorize option.
+## Database Documentation
 
-## API Architecture
+Database schema documentation is available in:
 
-The backend follows a structured MVC-style architecture:
+```text
+DATABASE_SCHEMA.md
+```
 
-- **Models:** MongoDB database schemas.
-- **Controllers:** Application business logic.
-- **Routes:** REST API endpoint definitions.
-- **Middleware:** Authentication, authorization and request handling.
-- **Services:** Reusable application services.
-- **Utils:** Helper functions and utilities.
+It describes the application's database structure and relationships.
+
+## Screenshots
+
+Application screenshots are available in the `Screenshots/` directory of this repository.
+
+The screenshots cover the Dashboard, Projects, Tasks, Team Members, and Notifications modules.
 
 ## Security
 
-- JWT-based authentication.
-- Password hashing.
-- Role-based authorization.
-- Environment variables for sensitive configuration.
-- Request validation and centralized error handling.
+- Password hashing using bcrypt
+- JWT-based authentication
+- Protected routes
+- Role-based authorization
+- Environment variables for sensitive configuration
 
 ## Future Enhancements
 
-- Automated unit and integration testing.
-- Email notifications.
-- File attachments.
-- Advanced analytics and reporting.
-- Cloud deployment.
-- Docker-based deployment.
+- Cloud deployment
+- Automated testing
+- Additional reporting and analytics
+- Further collaboration features
 
 ## Author
 
 **Kalpesh Dipak Patil**
 
-GitHub: https://github.com/Kalpesh0451
+Software Engineer
 
-## Repository
+## GitHub Repository
 
 https://github.com/Kalpesh0451/TaskMatrix
-
----
-
-*TaskMatrix – Simplifying Project and Team Management.*
