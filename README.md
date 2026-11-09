@@ -220,3 +220,10 @@ Software Engineer
 ## GitHub Repository
 
 https://github.com/Kalpesh0451/TaskMatrix
+
+
+## Project Demo Video
+
+Watch the complete demonstration of TaskMatrix, including authentication, dashboard, project management, task management, Kanban board, team management, notifications, and API documentation.
+
+[Watch TaskMatrix Project Demo](https://drive.google.com/file/d/1oH9SqVNLGNAPTRBkQWEvOMIbr2is25w8/view?usp=sharing)
